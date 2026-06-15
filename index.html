@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Ackerman Negotiation Calculator</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta charset="UTF-8">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ackerman">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #172033;
+      --panel-soft: #1e293b;
+      --ink: #f8fafc;
+      --muted: #94a3b8;
+      --line: #334155;
+      --field: #020617;
+      --blue: #3b82f6;
+      --blue-dark: #2563eb;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --danger: #ef4444;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { height: 100%; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top, #1e3a8a 0, var(--bg) 42%);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+    }
+
+    /* ─── Skeleton ──────────────────────────────────────────────── */
+    #skeleton-loader {
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; justify-content: center; align-items: flex-start;
+      padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+      background: radial-gradient(circle at top, #1e3a8a 0, var(--bg) 42%);
+      opacity: 1; transition: opacity 0.4s ease; pointer-events: all;
+    }
+    #skeleton-loader.hidden { opacity: 0; pointer-events: none; }
+    #skeleton-loader .skeleton-inner {
+      width: 100%; max-width: 480px;
+      background: rgba(23,32,51,0.96);
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: 18px; padding: 18px;
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--field) 25%, var(--panel-soft) 50%, var(--field) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite ease-in-out;
+      border-radius: 8px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .sk-header  { height: 28px; width: 65%; margin-bottom: 18px; }
+    .sk-toggle  { height: 52px; margin-bottom: 14px; border-radius: 12px; }
+    .sk-input   { height: 46px; margin-bottom: 12px; border-radius: 10px; }
+    .sk-button  { height: 48px; margin-bottom: 18px; border-radius: 10px; }
+    .sk-tracker { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 14px; }
+    .sk-tracker > div { height: 46px; border-radius: 8px; }
+    .sk-card    { height: 160px; margin-bottom: 10px; border-radius: 12px; }
+
+    /* ─── App Shell ─────────────────────────────────────────────── */
+    .app {
+      width: 100%; max-width: 480px; position: relative;
+      background: rgba(23,32,51,0.96);
+      border: 1px solid rgba(148,163,184,0.18);
+      border-radius: 18px; padding: 18px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.42);
+      opacity: 0; transition: opacity 0.4s ease;
+    }
+    .app.loaded { opacity: 1; }
+
+    .app-header {
+      display: flex; justify-content: space-between;
+      gap: 14px; align-items: center; margin-bottom: 14px;
+    }
+    h1 { font-size: clamp(18px,5vw,22px); line-height: 1.15; margin: 0; }
+
+    .badge {
+      color: #bfdbfe; background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(147,197,253,0.3);
+      padding: 7px 10px; border-radius: 999px;
+      font-size: 12px; white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* ─── History panel ─────────────────────────────────────────── */
+    .history-bar {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 14px; overflow-x: auto;
+      scrollbar-width: none; padding-bottom: 2px;
+    }
+    .history-bar::-webkit-scrollbar { display: none; }
+
+    .history-chip {
+      flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+      background: var(--field); border: 1px solid var(--line);
+      border-radius: 999px; padding: 6px 12px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap; touch-action: manipulation;
+    }
+    .history-chip.active {
+      border-color: var(--blue); color: #93c5fd;
+      background: rgba(59,130,246,0.1);
+    }
+    .history-chip .chip-del {
+      font-size: 14px; line-height: 1; color: var(--muted);
+      margin-left: 2px; padding: 0 2px;
+    }
+    .history-chip .chip-del:hover { color: var(--danger); }
+
+    .new-session-btn {
+      flex-shrink: 0; background: transparent;
+      border: 1px dashed var(--line); border-radius: 999px;
+      color: var(--muted); font-size: 12px; font-weight: 700;
+      padding: 6px 12px; cursor: pointer; white-space: nowrap;
+      touch-action: manipulation; transition: border-color 0.15s, color 0.15s;
+    }
+    .new-session-btn:hover { border-color: var(--blue); color: #93c5fd; }
+
+    /* ─── Mode toggle ───────────────────────────────────────────── */
+    .mode-toggle {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      background: var(--field); border: 1px solid var(--line);
+      border-radius: 12px; padding: 6px; margin-bottom: 14px;
+    }
+    .mode-toggle button, .small-button, .step-button {
+      border: 0; color: var(--ink); cursor: pointer; font-weight: 700;
+    }
+    .mode-toggle button {
+      background: transparent; border-radius: 8px;
+      padding: 12px 10px; font-size: 15px; transition: background 0.2s;
+    }
+    .mode-toggle button.active {
+      background: var(--blue);
+      box-shadow: 0 8px 18px rgba(59,130,246,0.25);
+    }
+
+    /* ─── Fields ────────────────────────────────────────────────── */
+    .field-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 6px; color: #cbd5e1; font-size: 13px; font-weight: 700; }
+
+    .label-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    }
+    .label-row label { margin-bottom: 0; }
+    .tooltip-btn {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--panel-soft); border: 1px solid var(--line);
+      color: var(--muted); font-size: 11px; font-weight: 800;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; touch-action: manipulation;
+    }
+    .tooltip-box {
+      display: none; margin-top: 6px; padding: 10px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 8px; font-size: 12px; color: #cbd5e1; line-height: 1.5;
+    }
+    .tooltip-box.visible { display: block; }
+
+    input, select {
+      width: 100%; min-height: 48px; padding: 12px;
+      font-size: 16px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--field);
+      color: var(--ink); outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    input:focus, select:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96,165,250,0.18);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+
+    .target-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .display {
+      background: var(--field); border: 1px solid var(--line);
+      padding: 14px; border-radius: 10px;
+      font-size: clamp(20px,5vw,24px); text-align: right;
+      font-weight: 800; overflow-wrap: anywhere;
+      min-height: 48px; display: flex; align-items: center; justify-content: flex-end;
+    }
+
+    .ladder { color: var(--muted); font-size: 13px; margin: 8px 0 14px; }
+
+    /* ─── How it works ──────────────────────────────────────────── */
+    .how-toggle {
+      width: 100%; background: transparent; border: none;
+      color: var(--muted); font-size: 12px; font-weight: 700;
+      text-align: left; padding: 0; cursor: pointer;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+      touch-action: manipulation;
+    }
+    .how-toggle .arrow { transition: transform 0.2s; display: inline-block; }
+    .how-toggle.open .arrow { transform: rotate(90deg); }
+    .how-box {
+      display: none; margin-bottom: 14px;
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.18);
+      border-radius: 10px; padding: 14px;
+      font-size: 13px; color: #cbd5e1; line-height: 1.6;
+    }
+    .how-box.visible { display: block; }
+    .how-box ol { margin: 8px 0 0 18px; padding: 0; }
+    .how-box li { margin-bottom: 4px; }
+    .how-box strong { color: var(--ink); }
+
+    /* ─── Buttons ───────────────────────────────────────────────── */
+    .primary-button {
+      width: 100%; min-height: 50px; padding: 14px;
+      font-size: 16px; border: none; border-radius: 10px;
+      background: var(--blue); color: white; cursor: pointer;
+      font-weight: 800; transition: background 0.2s; touch-action: manipulation;
+    }
+    .primary-button:active { background: var(--blue-dark); }
+
+    .secondary-button {
+      width: 100%; min-height: 44px; padding: 11px;
+      font-size: 14px; border: 1px solid var(--line);
+      border-radius: 10px; background: var(--panel-soft);
+      color: var(--muted); cursor: pointer; font-weight: 700;
+      transition: border-color 0.15s, color 0.15s; touch-action: manipulation;
+      margin-top: 10px;
+    }
+    .secondary-button:hover { border-color: var(--blue); color: #93c5fd; }
+
+    .error {
+      margin-top: 12px; background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(248,113,113,0.35);
+      color: #fecaca; padding: 12px; border-radius: 10px;
+    }
+
+    /* ─── Tracker ───────────────────────────────────────────────── */
+    .tracker { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin: 16px 0 12px; }
+    .track-step {
+      border: 1px solid var(--line); background: var(--field);
+      color: var(--muted); border-radius: 8px; padding: 8px 5px;
+      text-align: center; font-size: 11px; min-height: 46px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .track-step.used {
+      border-color: rgba(34,197,94,0.65); color: #bbf7d0;
+      background: rgba(34,197,94,0.12);
+    }
+
+    /* ─── Summary screen ────────────────────────────────────────── */
+    .summary-card {
+      margin-top: 14px; border-radius: 14px; padding: 20px;
+      background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.35);
+      text-align: center;
+    }
+    .summary-emoji { font-size: 40px; margin-bottom: 10px; }
+    .summary-title { font-size: 18px; font-weight: 900; color: #bbf7d0; margin-bottom: 6px; }
+    .summary-sub { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+    .summary-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+    }
+    .summary-stat {
+      background: rgba(2,6,23,0.5); border-radius: 10px; padding: 12px;
+    }
+    .summary-stat-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+    .summary-stat-value { font-size: 16px; font-weight: 900; color: var(--ink); }
+
+    /* ─── Offer cards ───────────────────────────────────────────── */
+    .offer-card {
+      background: var(--field); border: 1px solid var(--line);
+      border-radius: 12px; padding: 14px; margin-top: 10px;
+    }
+    .offer-card.used { border-color: rgba(34,197,94,0.65); }
+    .offer-top {
+      display: flex; justify-content: space-between;
+      gap: 12px; align-items: start; margin-bottom: 10px;
+    }
+    .offer-title { font-size: 14px; color: #cbd5e1; font-weight: 800; }
+    .offer-percent { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .offer-price {
+      font-size: clamp(18px,5vw,22px); font-weight: 900;
+      text-align: right; overflow-wrap: anywhere; flex-shrink: 0;
+    }
+    .script {
+      color: #dbeafe; background: rgba(59,130,246,0.1);
+      border-left: 3px solid var(--blue);
+      padding: 10px; border-radius: 8px; line-height: 1.5; font-size: 14px;
+    }
+    .mechanic { color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 10px; }
+    .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .step-button {
+      border-radius: 9px; padding: 11px 10px;
+      background: var(--panel-soft); border: 1px solid var(--line);
+      font-size: 14px; touch-action: manipulation; transition: opacity 0.15s;
+    }
+    .step-button:active { opacity: 0.75; }
+    .step-button.used {
+      background: rgba(34,197,94,0.18); border-color: rgba(34,197,94,0.55); color: #bbf7d0;
+    }
+    .step-button.copied {
+      background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.55); color: #93c5fd;
+    }
+
+    /* ─── Sparkline ─────────────────────────────────────────────── */
+    .sparkline-wrap {
+      margin-top: 12px; padding: 10px;
+      background: rgba(2,6,23,0.4); border-radius: 8px;
+    }
+    .sparkline-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+    .sparkline-svg { width: 100%; height: 48px; display: block; }
+
+    /* ─── Insights ──────────────────────────────────────────────── */
+    .insights-panel {
+      margin-top: 14px; background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.25); border-radius: 12px; padding: 14px;
+    }
+    .insight-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid rgba(59,130,246,0.12);
+    }
+    .insight-row:last-child { border-bottom: none; }
+    .insight-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .insight-value { font-size: 14px; color: #bfdbfe; font-weight: 800; }
+    .gap-bar { height: 6px; background: rgba(59,130,246,0.15); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .gap-fill { height: 100%; background: linear-gradient(90deg,#3b82f6,#22c55e); border-radius: 3px; transition: width 0.3s ease; }
+    .recommendation {
+      margin-top: 12px; padding: 10px;
+      background: rgba(34,197,94,0.12); border-left: 3px solid #22c55e;
+      border-radius: 6px; font-size: 13px; color: #bbf7d0; line-height: 1.5;
+    }
+
+    /* ─── Log panel ─────────────────────────────────────────────── */
+    .log-panel {
+      margin-top: 14px; background: rgba(2,6,23,0.72);
+      border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+    }
+    .log-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+    .small-button {
+      min-height: 48px; min-width: 80px; padding: 10px 14px;
+      background: var(--amber); color: #111827; border-radius: 9px;
+      border: none; font-size: 14px; font-weight: 700; touch-action: manipulation;
+    }
+    .log-list { margin: 12px 0 0; padding: 0; list-style: none; color: #e2e8f0; font-size: 14px; line-height: 1.5; }
+    .log-list li {
+      display: flex; justify-content: space-between; gap: 10px;
+      border-top: 1px solid rgba(51,65,85,0.7); padding: 8px 0;
+    }
+    .empty { color: var(--muted); margin-top: 10px; font-size: 13px; }
+
+    /* ─── Export ────────────────────────────────────────────────── */
+    .export-btn {
+      width: 100%; min-height: 44px; padding: 11px;
+      font-size: 14px; border: 1px solid var(--line);
+      border-radius: 10px; background: transparent;
+      color: var(--muted); cursor: pointer; font-weight: 700;
+      touch-action: manipulation; transition: border-color 0.15s, color 0.15s;
+      margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .export-btn:hover { border-color: var(--blue); color: #93c5fd; }
+    .export-btn.copied { border-color: var(--green); color: #bbf7d0; }
+
+    .tips { margin-top: 14px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    .app-footer {
+      margin-top: 20px; padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 11px; color: var(--muted); text-align: center; line-height: 1.6;
+    }
+    .app-footer a { color: #60a5fa; text-decoration: none; }
+    .app-footer a:hover { text-decoration: underline; }
+
+    /* ─── Confirm overlay ───────────────────────────────────────── */
+    .confirm-overlay {
+      position: absolute; inset: 0; background: rgba(2,6,23,0.72);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; border-radius: 18px; padding: 18px;
+    }
+    .confirm-box {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 14px; padding: 20px; max-width: 300px; width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+    }
+    .confirm-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+    .confirm-message { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+    .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .confirm-button { padding: 11px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 800; touch-action: manipulation; }
+    .confirm-cancel { border: 1px solid var(--line); background: var(--panel-soft); color: var(--ink); }
+    .confirm-ok { border: none; background: var(--danger); color: white; }
+
+    /* ─── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 360px) {
+      body { padding: max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left)); }
+      .app { padding: 14px; border-radius: 14px; }
+      .app-header { flex-wrap: wrap; gap: 8px; }
+      h1 { font-size: 17px; }
+      .offer-top { flex-direction: column; gap: 6px; }
+      .offer-price { text-align: left; }
+      .card-actions { grid-template-columns: 1fr; }
+      .log-row { grid-template-columns: 1fr; }
+      .small-button { width: 100%; }
+      .tracker { grid-template-columns: repeat(2,1fr); }
+      .summary-stats { grid-template-columns: 1fr; }
+    }
+    @media (max-height: 500px) and (orientation: landscape) {
+      body { align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton { animation: none; }
+      .app, #skeleton-loader { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── Skeleton ──────────────────────────────────────────────── -->
+  <div id="skeleton-loader">
+    <div class="skeleton-inner">
+      <div class="sk-header skeleton"></div>
+      <div class="sk-toggle skeleton"></div>
+      <div class="sk-input skeleton"></div>
+      <div class="sk-input skeleton"></div>
+      <div class="sk-input skeleton"></div>
+      <div class="sk-button skeleton"></div>
+      <div class="sk-tracker">
+        <div class="skeleton"></div><div class="skeleton"></div>
+        <div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+      <div class="sk-card skeleton"></div>
+      <div class="sk-card skeleton"></div>
+    </div>
+  </div>
+
+  <!-- ─── App ───────────────────────────────────────────────────── -->
+  <main class="app">
+    <div class="app-header">
+      <h1>Negotiation Calculator</h1>
+      <div class="badge">Ackerman Method</div>
+    </div>
+
+    <!-- Session history chips -->
+    <div class="history-bar" id="historyBar"></div>
+
+    <section class="mode-toggle" aria-label="Negotiation mode">
+      <button id="buyerMode" class="active" type="button" onclick="setMode('buyer')">Buyer</button>
+      <button id="sellerMode" type="button" onclick="setMode('seller')">Seller</button>
+    </section>
+
+    <div class="field-group">
+      <label for="currency">Currency</label>
+      <select id="currency" onchange="setCurrency(this.value)">
+        <option value="USD">$ USD</option>
+        <option value="PHP">₱ PHP</option>
+        <option value="EUR">€ EUR</option>
+        <option value="GBP">£ GBP</option>
+        <option value="JPY">¥ JPY</option>
+        <option value="INR">₹ INR</option>
+        <option value="CNY">¥ CNY</option>
+        <option value="AUD">A$ AUD</option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label for="target">Target price</label>
+      <div class="target-row">
+        <input type="number" id="target" placeholder="Example: 10000" min="1" inputmode="decimal" oninput="updateDisplay()">
+        <div class="display" id="display">₱0</div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label for="item">Item or service</label>
+      <input type="text" id="item" placeholder="Example: used car, laptop, repair job">
+    </div>
+
+    <div class="field-group">
+      <div class="label-row">
+        <label for="concession">Final non-cash concession</label>
+        <button class="tooltip-btn" type="button" onclick="toggleTooltip()" aria-label="What is this?">?</button>
+      </div>
+      <div class="tooltip-box" id="tooltipBox">
+        A non-cash concession is something extra you offer that doesn't cost you money but adds value — like paying today, faster handoff, free setup, or a warranty. It signals you've hit your financial limit while still moving the deal forward.
+      </div>
+      <input type="text" id="concession" placeholder="Example: pay today, faster closing, free setup">
+    </div>
+
+    <div class="ladder" id="ladderText">Buyer ladder: 65% → 85% → 95% → Final</div>
+
+    <!-- How it works collapsible -->
+    <button class="how-toggle" type="button" onclick="toggleHow(this)" aria-expanded="false">
+      <span class="arrow">▶</span> How the Ackerman method works
+    </button>
+    <div class="how-box" id="howBox">
+      The Ackerman model uses four tapering offers to make your counterpart feel every concession is a final sacrifice.
+      <ol>
+        <li><strong>65% anchor</strong> — extreme opening that resets expectations</li>
+        <li><strong>85% step</strong> — large move showing flexibility</li>
+        <li><strong>95% step</strong> — smaller move signalling budget is tightening</li>
+        <li><strong>100% final + perk</strong> — your real target plus a non-cash extra</li>
+      </ol>
+      Decreasing concession sizes create psychological exhaustion. Odd-number pricing signals a calculated, firm limit. Method popularised by <a href="https://www.amazon.com/Never-Split-Difference-Negotiating-Depended/dp/0062407805" target="_blank" rel="noopener">Chris Voss in <em>Never Split the Difference</em></a>.
+    </div>
+
+    <button class="primary-button" type="button" onclick="calculate()">Generate negotiation plan</button>
+
+    <div id="result"></div>
+
+    <footer class="app-footer" id="appFooter" style="display:none">
+      Method by <a href="https://www.amazon.com/Never-Split-Difference-Negotiating-Depended/dp/0062407805" target="_blank" rel="noopener">Chris Voss — <em>Never Split the Difference</em></a>
+    </footer>
+  </main>
+
+  <script>
+    /* ─── State ─────────────────────────────────────────────────── */
+    const state = {
+      mode: "buyer",
+      currency: "PHP",
+      offers: [],
+      usedSteps: new Set(),
+      counterOffers: [],
+      activeSessionId: null
+    };
+
+    const SESSIONS_KEY = "ackerman_sessions";       // index of all sessions
+    const ACTIVE_KEY   = "ackerman_active_session"; // last active id
+    const LEGACY_KEY   = "ackerman_negotiation_state"; // migrate old saves
+
+    /* ─── Session storage helpers ───────────────────────────────── */
+    function getSessions() {
+      try { return JSON.parse(localStorage.getItem(SESSIONS_KEY) || "[]"); } catch { return []; }
+    }
+    function saveSessions(sessions) {
+      try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions)); } catch {}
+    }
+    function getSession(id) {
+      try { return JSON.parse(localStorage.getItem("ackerman_session_" + id) || "null"); } catch { return null; }
+    }
+    function saveSession(id, data) {
+      try { localStorage.setItem("ackerman_session_" + id, JSON.stringify(data)); } catch {}
+    }
+    function deleteSession(id) {
+      try { localStorage.removeItem("ackerman_session_" + id); } catch {}
+    }
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+    function persistCurrentSession() {
+      if (!state.activeSessionId) return;
+      const sessions = getSessions();
+      const idx = sessions.findIndex(s => s.id === state.activeSessionId);
+      const meta = {
+        id: state.activeSessionId,
+        label: state.sessionLabel || "Session",
+        mode: state.mode,
+        currency: state.currency,
+        target: state.sessionTarget || 0,
+        updatedAt: Date.now()
+      };
+      if (idx >= 0) sessions[idx] = meta; else sessions.push(meta);
+      saveSessions(sessions);
+      saveSession(state.activeSessionId, {
+        mode: state.mode,
+        currency: state.currency,
+        offers: state.offers,
+        usedSteps: Array.from(state.usedSteps),
+        counterOffers: state.counterOffers,
+        sessionLabel: state.sessionLabel,
+        sessionTarget: state.sessionTarget
+      });
+      try { localStorage.setItem(ACTIVE_KEY, state.activeSessionId); } catch {}
+    }
+
+    function loadSessionById(id) {
+      const data = getSession(id);
+      if (!data) return false;
+      state.mode = data.mode || "buyer";
+      state.currency = data.currency || "PHP";
+      state.offers = data.offers || [];
+      state.usedSteps = new Set(data.usedSteps || []);
+      state.counterOffers = data.counterOffers || [];
+      state.sessionLabel = data.sessionLabel || "Session";
+      state.sessionTarget = data.sessionTarget || 0;
+      state.activeSessionId = id;
+      return true;
+    }
+
+    function migrateLegacy() {
+      try {
+        const raw = localStorage.getItem(LEGACY_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed.offers || !parsed.offers.length) { localStorage.removeItem(LEGACY_KEY); return; }
+        const id = genId();
+        const label = parsed.offers[0]?.script?.match(/the (.+?),/) ?
+          parsed.offers[0].script.match(/the (.+?),/)[1] : "Previous session";
+        saveSession(id, { ...parsed, sessionLabel: label, sessionTarget: 0 });
+        const sessions = getSessions();
+        sessions.unshift({ id, label, mode: parsed.mode || "buyer", currency: parsed.currency || "PHP", target: 0, updatedAt: Date.now() });
+        saveSessions(sessions);
+        localStorage.removeItem(LEGACY_KEY);
+      } catch {}
+    }
+
+    /* ─── Init ──────────────────────────────────────────────────── */
+    function initializeApp() {
+      migrateLegacy();
+
+      let loaded = false;
+      try {
+        const lastId = localStorage.getItem(ACTIVE_KEY);
+        if (lastId) loaded = loadSessionById(lastId);
+      } catch {}
+
+      if (!loaded) {
+        // Try first available session
+        const sessions = getSessions();
+        if (sessions.length > 0) loaded = loadSessionById(sessions[0].id);
+      }
+
+      syncUIToState();
+      if (state.offers.length > 0) renderPlan();
+      renderHistoryBar();
+
+      setTimeout(() => {
+        document.getElementById("skeleton-loader").classList.add("hidden");
+        document.querySelector("main.app").classList.add("loaded");
+      }, 600);
+    }
+
+    function syncUIToState() {
+      document.getElementById("currency").value = state.currency;
+      document.getElementById("buyerMode").classList.toggle("active", state.mode === "buyer");
+      document.getElementById("sellerMode").classList.toggle("active", state.mode === "seller");
+      document.getElementById("ladderText").innerText = state.mode === "buyer"
+        ? "Buyer ladder: 65% → 85% → 95% → Final"
+        : "Seller ladder: 135% → 115% → 105% → Final";
+      updateDisplay();
+    }
+
+    /* ─── History bar ───────────────────────────────────────────── */
+    function renderHistoryBar() {
+      const bar = document.getElementById("historyBar");
+      const sessions = getSessions();
+      if (sessions.length === 0) { bar.innerHTML = ""; return; }
+
+      const chips = sessions.map(s => {
+        const active = s.id === state.activeSessionId ? " active" : "";
+        return `<div class="history-chip${active}" onclick="switchSession('${s.id}')">
+          ${escHtml(s.label)}
+          <span class="chip-del" onclick="event.stopPropagation();removeSession('${s.id}')" title="Delete">×</span>
+        </div>`;
+      }).join("");
+
+      bar.innerHTML = chips + `<button class="new-session-btn" type="button" onclick="newSession()">+ New</button>`;
+    }
+
+    function switchSession(id) {
+      if (id === state.activeSessionId) return;
+      persistCurrentSession();
+      if (loadSessionById(id)) {
+        syncUIToState();
+        renderPlan();
+        renderHistoryBar();
+      }
+    }
+
+    function newSession() {
+      persistCurrentSession();
+      state.activeSessionId = genId();
+      state.mode = "buyer";
+      state.currency = state.currency; // keep last currency
+      state.offers = [];
+      state.usedSteps = new Set();
+      state.counterOffers = [];
+      state.sessionLabel = "New session";
+      state.sessionTarget = 0;
+      syncUIToState();
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("target").value = "";
+      document.getElementById("item").value = "";
+      document.getElementById("concession").value = "";
+      document.getElementById("appFooter").style.display = "none";
+      updateDisplay();
+      renderHistoryBar();
+    }
+
+    function removeSession(id) {
+      const sessions = getSessions().filter(s => s.id !== id);
+      deleteSession(id);
+      saveSessions(sessions);
+      if (id === state.activeSessionId) {
+        if (sessions.length > 0) {
+          loadSessionById(sessions[0].id);
+          syncUIToState();
+          renderPlan();
+        } else {
+          state.activeSessionId = null;
+          state.offers = [];
+          state.usedSteps = new Set();
+          state.counterOffers = [];
+          document.getElementById("result").innerHTML = "";
+          document.getElementById("appFooter").style.display = "none";
+        }
+      }
+      renderHistoryBar();
+    }
+
+    /* ─── Ladder data ───────────────────────────────────────────── */
+    const ladders = {
+      buyer: [
+        { label: "Anchor",       percent: 0.65, mechanic: "Extreme anchor: resets expectations without starting at your real limit." },
+        { label: "Step Up 1",    percent: 0.85, mechanic: "Large first move: shows flexibility while keeping room to negotiate." },
+        { label: "Step Up 2",    percent: 0.95, mechanic: "Smaller move: creates the feeling that your budget is tightening." },
+        { label: "Final + Perk", percent: 1,    mechanic: "Final number plus a non-cash concession: signals there is no money left to add." }
+      ],
+      seller: [
+        { label: "Anchor",       percent: 1.35, mechanic: "High anchor: frames your item or service around its strongest value." },
+        { label: "Step Down 1",  percent: 1.15, mechanic: "Meaningful concession: lets the buyer feel progress without reaching your target yet." },
+        { label: "Step Down 2",  percent: 1.05, mechanic: "Smaller concession: shows you are nearing the bottom of your range." },
+        { label: "Final + Perk", percent: 1,    mechanic: "Final number plus a non-cash concession: closes the gap without cutting price further." }
+      ]
+    };
+
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
+    document.addEventListener("DOMContentLoaded", initializeApp);
+
+    /* ─── Confirm dialog ────────────────────────────────────────── */
+    function hasActiveSession() {
+      return state.offers.length > 0 && (state.usedSteps.size > 0 || state.counterOffers.length > 0);
+    }
+    function showConfirm(title, message, cancelLabel, confirmLabel, onConfirm) {
+      document.querySelector(".confirm-overlay")?.remove();
+      const overlay = document.createElement("div");
+      overlay.className = "confirm-overlay";
+      overlay.innerHTML = `
+        <div class="confirm-box">
+          <div class="confirm-title">${title}</div>
+          <div class="confirm-message">${message}</div>
+          <div class="confirm-actions">
+            <button class="confirm-button confirm-cancel" type="button" id="confirmCancel">${cancelLabel}</button>
+            <button class="confirm-button confirm-ok" type="button" id="confirmOk">${confirmLabel}</button>
+          </div>
+        </div>`;
+      document.querySelector(".app").appendChild(overlay);
+      overlay.querySelector("#confirmCancel").onclick = () => overlay.remove();
+      overlay.querySelector("#confirmOk").onclick = () => { overlay.remove(); onConfirm(); };
+    }
+
+    /* ─── Mode ──────────────────────────────────────────────────── */
+    function setMode(mode) {
+      if (mode === state.mode) return;
+      if (hasActiveSession()) {
+        showConfirm(
+          `Switch to ${mode} mode?`,
+          "You have logged counter-offers or marked steps. Switching modes will clear your current session.",
+          `Keep ${state.mode} mode`, "Switch anyway",
+          () => applyMode(mode)
+        );
+        return;
+      }
+      applyMode(mode);
+    }
+    function applyMode(mode) {
+      state.mode = mode;
+      state.offers = []; state.usedSteps.clear(); state.counterOffers = [];
+      document.getElementById("buyerMode").classList.toggle("active", mode === "buyer");
+      document.getElementById("sellerMode").classList.toggle("active", mode === "seller");
+      document.getElementById("ladderText").innerText = mode === "buyer"
+        ? "Buyer ladder: 65% → 85% → 95% → Final"
+        : "Seller ladder: 135% → 115% → 105% → Final";
+      document.getElementById("result").innerHTML = "";
+      persistCurrentSession();
+    }
+
+    /* ─── Currency ──────────────────────────────────────────────── */
+    function setCurrency(currency) {
+      state.currency = currency;
+      updateDisplay();
+      if (state.offers.length > 0) renderPlan();
+      persistCurrentSession();
+    }
+    function formatCurrency(num) {
+      const map = {
+        "USD": { code: "USD", locale: "en-US" },
+        "PHP": { code: "PHP", locale: "en-PH" },
+        "EUR": { code: "EUR", locale: "de-DE" },
+        "GBP": { code: "GBP", locale: "en-GB" },
+        "JPY": { code: "JPY", locale: "ja-JP" },
+        "INR": { code: "INR", locale: "en-IN" },
+        "CNY": { code: "CNY", locale: "zh-CN" },
+        "AUD": { code: "AUD", locale: "en-AU" }
+      };
+      const curr = map[state.currency] || map["USD"];
+      return new Intl.NumberFormat(curr.locale, { style: "currency", currency: curr.code, maximumFractionDigits: 0 }).format(num);
+    }
+
+    function cleanText(v, fallback) { return v.trim() || fallback; }
+    function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+    function updateDisplay() {
+      const val = Number(document.getElementById("target").value) || 0;
+      document.getElementById("display").innerText = formatCurrency(val);
+    }
+
+    /* ─── Offer math ────────────────────────────────────────────── */
+    function preciseOffer(amount, isFinal) {
+      const range = isFinal ? 0.0035 : 0.005;
+      const direction = state.mode === "buyer" ? -1 : 1;
+      const randomShift = amount * (Math.random() * range * direction);
+      let value = Math.max(1, Math.round(amount + randomShift));
+      const endings = [3, 7, 9];
+      value = Math.floor(value / 10) * 10 + endings[Math.floor(Math.random() * endings.length)];
+      if (state.mode === "buyer" && isFinal && value > amount) value -= 10;
+      if (state.mode === "seller" && isFinal && value < amount) value += 10;
+      return Math.max(1, value);
+    }
+    function makeScript(step, amount, item, concession) {
+      const price = formatCurrency(amount);
+      const thing = item.toLowerCase();
+      const perk = concession.toLowerCase();
+      if (state.mode === "buyer") {
+        return [
+          `I really like the ${thing}, but based on my budget I can make ${price} work.`,
+          `I understand your number. How am I supposed to close that gap with the budget I have? I can stretch to ${price}.`,
+          `You've been fair with me, and I appreciate it. This is very close to my absolute limit: ${price}.`,
+          `I can do ${price}, and I can also offer ${perk}. That is the strongest complete offer I can make.`
+        ][step];
+      }
+      return [
+        `Given the value of the ${thing}, I am asking ${price}.`,
+        `I hear where you are coming from. I can adjust to ${price} if we can keep the deal moving.`,
+        `I want to make this work, but this is very close to my floor: ${price}.`,
+        `I can settle at ${price}, and I will include ${perk}. That is the strongest complete deal I can offer.`
+      ][step];
+    }
+
+    /* ─── Calculate ─────────────────────────────────────────────── */
+    function calculate() {
+      const target = Number(document.getElementById("target").value);
+      const item = cleanText(document.getElementById("item").value, "item");
+      const concession = cleanText(
+        document.getElementById("concession").value,
+        state.mode === "buyer" ? "pay quickly and make the handoff easy" : "include a small bonus or faster delivery"
+      );
+      if (!target || target <= 0) {
+        document.getElementById("result").innerHTML = `<div class="error">Please enter a valid target price above 0.</div>`;
+        return;
+      }
+
+      state.usedSteps.clear();
+      state.counterOffers = [];
+      state.sessionTarget = target;
+      state.sessionLabel = item !== "item" ? item : "Session";
+
+      // Ensure stable amounts (generate once)
+      state.offers = ladders[state.mode].map((step, i) => {
+        const amount = preciseOffer(target * step.percent, i === 3);
+        return { ...step, amount, script: makeScript(i, amount, item, concession) };
+      });
+
+      // Create new session id if none
+      if (!state.activeSessionId) state.activeSessionId = genId();
+
+      persistCurrentSession();
+      renderHistoryBar();
+      renderPlan();
+      document.getElementById("appFooter").style.display = "block";
+    }
+
+    /* ─── Gap analysis ──────────────────────────────────────────── */
+    function calculateGapAnalysis() {
+      if (!state.counterOffers.length) return null;
+      const target = state.sessionTarget || Number(document.getElementById("target").value);
+      const latest = state.counterOffers[state.counterOffers.length - 1];
+      const gap = Math.abs(target - latest);
+      const gapPercent = (gap / target) * 100;
+      const velocity = state.counterOffers.length > 1
+        ? state.counterOffers[state.counterOffers.length - 1] - state.counterOffers[state.counterOffers.length - 2]
+        : 0;
+      return { gap, gapPercent, latestOffer: latest, closingVelocity: velocity, targetReached: gap < target * 0.01 };
+    }
+    function getRecommendation() {
+      const a = calculateGapAnalysis();
+      if (!a || !state.offers.length) return null;
+      const next = Math.max(...Array.from(state.usedSteps), -1) + 1;
+      const pct = a.gapPercent;
+      if (a.targetReached) return "✓ Target reached! Consider accepting or using your final offer to push for the perk.";
+      if (pct > 50) return "Gap is still large. Continue with your ladder steps as planned.";
+      if (pct > 20) return next < 3 ? `Move to offer ${next + 1} (${state.offers[next]?.label}). They're showing willingness.` : "Prepare your final offer with the non-cash concession.";
+      if (pct > 5) return "Near the target. Consider your final offer.";
+      return "Very close — your next offer should be final with maximum commitment.";
+    }
+    function calculateWinProbability() {
+      if (!state.counterOffers.length) return 50;
+      const a = calculateGapAnalysis();
+      if (!a) return 50;
+      if (a.targetReached) return 95;
+      if (a.gapPercent <= 5)  return 80;
+      if (a.gapPercent <= 10) return 70;
+      if (a.gapPercent <= 20) return 60;
+      if (a.gapPercent <= 50) return 50;
+      return Math.max(10, 50 - (a.gapPercent - 50) / 10);
+    }
+
+    /* ─── Sparkline ─────────────────────────────────────────────── */
+    function buildSparkline(offers) {
+      if (offers.length < 2) return "";
+      const w = 300, h = 48, pad = 4;
+      const min = Math.min(...offers), max = Math.max(...offers);
+      const range = max - min || 1;
+      const pts = offers.map((v, i) => {
+        const x = pad + (i / (offers.length - 1)) * (w - pad * 2);
+        const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+      const isDown = offers[offers.length - 1] < offers[0];
+      const color = isDown ? "#22c55e" : "#f59e0b";
+      return `<div class="sparkline-wrap">
+        <div class="sparkline-label">Their offer trend</div>
+        <svg class="sparkline-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+          <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          ${offers.map((v, i) => {
+            const x = pad + (i / (offers.length - 1)) * (w - pad * 2);
+            const y = pad + (1 - (v - min) / range) * (h - pad * 2);
+            return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${color}"/>`;
+          }).join("")}
+        </svg>
+      </div>`;
+    }
+
+    /* ─── All-used summary ──────────────────────────────────────── */
+    function buildSummary() {
+      const allUsed = state.offers.length === 4 && [0,1,2,3].every(i => state.usedSteps.has(i));
+      if (!allUsed) return "";
+      const target = state.sessionTarget || 0;
+      const final = state.offers[3].amount;
+      const analysis = calculateGapAnalysis();
+      const won = analysis && analysis.targetReached;
+      const latest = analysis ? formatCurrency(analysis.latestOffer) : "—";
+
+      return `<div class="summary-card">
+        <div class="summary-emoji">${won ? "🎉" : "🤝"}</div>
+        <div class="summary-title">${won ? "Deal reached!" : "All offers used"}</div>
+        <div class="summary-sub">${won ? "You hit your target. Nice work." : "You've gone through all four steps of the ladder."}</div>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-label">Your target</div>
+            <div class="summary-stat-value">${formatCurrency(target)}</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Final offer</div>
+            <div class="summary-stat-value">${formatCurrency(final)}</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Their last offer</div>
+            <div class="summary-stat-value">${latest}</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-label">Win probability</div>
+            <div class="summary-stat-value">${calculateWinProbability()}%</div>
+          </div>
+        </div>
+        <button class="secondary-button" type="button" onclick="newSession()">Start new negotiation</button>
+      </div>`;
+    }
+
+    /* ─── Render ────────────────────────────────────────────────── */
+    function renderPlan() {
+      const tracker = state.offers.map((o, i) =>
+        `<div class="track-step${state.usedSteps.has(i) ? " used" : ""}">${o.label}</div>`
+      ).join("");
+
+      const analysis = calculateGapAnalysis();
+      const recommendation = getRecommendation();
+      const winProb = calculateWinProbability();
+
+      let insightsHtml = "";
+      if (state.counterOffers.length > 0) {
+        const pct = analysis.gapPercent.toFixed(1);
+        const fill = Math.min(100, Math.max(0, 100 - parseFloat(pct)));
+        insightsHtml = `
+          <section class="insights-panel">
+            <div class="insight-row">
+              <span class="insight-label">Gap to target</span>
+              <span class="insight-value">${pct}%</span>
+            </div>
+            <div class="gap-bar"><div class="gap-fill" style="width:${fill}%"></div></div>
+            <div class="insight-row" style="margin-top:10px">
+              <span class="insight-label">Win probability</span>
+              <span class="insight-value">${winProb}%</span>
+            </div>
+            <div class="insight-row">
+              <span class="insight-label">Latest offer</span>
+              <span class="insight-value">${formatCurrency(analysis.latestOffer)}</span>
+            </div>
+            ${recommendation ? `<div class="recommendation">${recommendation}</div>` : ""}
+            ${buildSparkline(state.counterOffers)}
+          </section>`;
+      }
+
+      const cards = state.offers.map((offer, i) => {
+        const used = state.usedSteps.has(i);
+        return `
+          <article class="offer-card${used ? " used" : ""}">
+            <div class="offer-top">
+              <div>
+                <div class="offer-title">Offer ${i + 1}: ${offer.label}</div>
+                <span class="offer-percent">${Math.round(offer.percent * 100)}% of target</span>
+              </div>
+              <div class="offer-price">${formatCurrency(offer.amount)}</div>
+            </div>
+            <div class="script">${offer.script}</div>
+            <div class="mechanic">${offer.mechanic}</div>
+            <div class="card-actions">
+              <button class="step-button${used ? " used" : ""}" type="button" onclick="toggleUsed(${i})">${used ? "✓ Used" : "Mark as used"}</button>
+              <button class="step-button" type="button" id="copyBtn${i}" onclick="copyScript(${i})">Copy script</button>
+            </div>
+          </article>`;
+      }).join("");
+
+      document.getElementById("result").innerHTML = `
+        <section class="tracker" aria-label="Progress tracker">${tracker}</section>
+        ${insightsHtml}
+        ${buildSummary()}
+        ${cards}
+        <section class="log-panel">
+          <div class="field-group">
+            <label for="counterOffer">Log counterparty offer</label>
+            <div class="log-row">
+              <input type="number" id="counterOffer" placeholder="Their latest number" min="1" inputmode="decimal">
+              <button class="small-button" type="button" onclick="logCounterOffer()">Log</button>
+            </div>
+          </div>
+          <ul class="log-list" id="logList">${renderLogItems()}</ul>
+          ${state.counterOffers.length ? "" : `<div class="empty">No counterparty offers logged yet.</div>`}
+        </section>
+        <button class="export-btn" type="button" id="exportBtn" onclick="copyFullPlan()">
+          <span>⬆</span> Copy full plan to clipboard
+        </button>
+        <div class="tips">Use these scripts as honest framing, not fake backstory. Pause after each offer and let the other side respond before moving to the next step.</div>`;
+    }
+
+    function renderLogItems() {
+      return state.counterOffers.map((amount, i) => {
+        const prev = i === 0 ? null : state.counterOffers[i - 1];
+        const change = prev ? amount - prev : 0;
+        const movement = prev ? `${change > 0 ? "+" : ""}${formatCurrency(change)}` : "First offer";
+        return `<li><span>${i + 1}. ${formatCurrency(amount)}</span><span>${movement}</span></li>`;
+      }).join("");
+    }
+
+    /* ─── Actions ───────────────────────────────────────────────── */
+    function toggleUsed(index) {
+      if (state.usedSteps.has(index)) state.usedSteps.delete(index);
+      else {
+        state.usedSteps.add(index);
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+      persistCurrentSession();
+      renderPlan();
+    }
+
+    function logCounterOffer() {
+      const input = document.getElementById("counterOffer");
+      const amount = Number(input.value);
+      if (!amount || amount <= 0) { input.focus(); return; }
+      state.counterOffers.push(Math.round(amount));
+      input.value = "";
+      persistCurrentSession();
+      renderPlan();
+    }
+
+    async function copyScript(index) {
+      const script = state.offers[index].script;
+      const btn = document.getElementById("copyBtn" + index);
+      try { await navigator.clipboard.writeText(script); }
+      catch { window.prompt("Copy this script:", script); return; }
+      if (btn) {
+        btn.textContent = "Copied ✓";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy script"; btn.classList.remove("copied"); }, 1500);
+      }
+    }
+
+    async function copyFullPlan() {
+      const btn = document.getElementById("exportBtn");
+      const lines = [
+        `Ackerman Negotiation Plan — ${state.sessionLabel || "Session"}`,
+        `Target: ${formatCurrency(state.sessionTarget || 0)}`,
+        `Mode: ${state.mode === "buyer" ? "Buyer" : "Seller"}`,
+        "",
+        ...state.offers.map((o, i) =>
+          `Offer ${i + 1} — ${o.label} (${Math.round(o.percent * 100)}% → ${formatCurrency(o.amount)})\n"${o.script}"`
+        ),
+        "",
+        state.counterOffers.length
+          ? "Their offers: " + state.counterOffers.map(v => formatCurrency(v)).join(" → ")
+          : "No counter-offers logged.",
+        "",
+        "Method: Ackerman Model by Chris Voss — Never Split the Difference"
+      ];
+      const text = lines.join("\n");
+      try { await navigator.clipboard.writeText(text); }
+      catch { window.prompt("Copy your full plan:", text); return; }
+      if (btn) {
+        btn.classList.add("copied");
+        btn.innerHTML = "<span>✓</span> Copied!";
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = "<span>⬆</span> Copy full plan to clipboard";
+        }, 2000);
+      }
+    }
+
+    /* ─── Tooltip & how-it-works ────────────────────────────────── */
+    function toggleTooltip() {
+      document.getElementById("tooltipBox").classList.toggle("visible");
+    }
+    function toggleHow(btn) {
+      const box = document.getElementById("howBox");
+      const open = box.classList.toggle("visible");
+      btn.classList.toggle("open", open);
+      btn.setAttribute("aria-expanded", open);
+    }
+  </script>
+</body>
+</html>

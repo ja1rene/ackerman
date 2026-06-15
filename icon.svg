@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="38" fill="#0f172a"/>
+  
+  <!-- Left side (approaching) - blue -->
+  <circle cx="64" cy="96" r="24" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="64" cy="96" r="20" fill="none" stroke="#3b82f6" stroke-width="3"/>
+  
+  <!-- Right side (approaching) - green -->
+  <circle cx="128" cy="96" r="24" fill="#22c55e" opacity="0.3"/>
+  <circle cx="128" cy="96" r="20" fill="none" stroke="#22c55e" stroke-width="3"/>
+  
+  <!-- Center meeting point - handshake style -->
+  <path d="M84 86 Q96 92 108 86" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Center convergence indicator -->
+  <circle cx="96" cy="96" r="3" fill="#f59e0b"/>
+  
+  <!-- Left arrow pointing right -->
+  <path d="M72 96 L76 96" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M76 96 L72 92 M76 96 L72 100" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Right arrow pointing left -->
+  <path d="M120 96 L116 96" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M116 96 L120 92 M116 96 L120 100" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Top label arc -->
+  <path d="M60 50 Q96 35 132 50" fill="none" stroke="#94a3b8" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Bottom value line (negotiation range) -->
+  <line x1="55" y1="145" x2="137" y2="145" stroke="#334155" stroke-width="2"/>
+  <circle cx="55" cy="145" r="2.5" fill="#ef4444"/>
+  <circle cx="96" cy="145" r="2.5" fill="#f59e0b"/>
+  <circle cx="137" cy="145" r="2.5" fill="#22c55e"/>
+</svg>
