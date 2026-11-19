@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ackerman Negotiation Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ackerman">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#f6f5f1;--sf:#fff;--ink:#1b1b18;--mut:#77756c;--ln:#e3e0d6;--ac:#1f4fd8;--onac:#fff;--acs:rgba(31,79,216,.08);--gr:#1f7a4d;--grs:rgba(31,122,77,.09);--dg:#b3382f;--fd:#faf9f6;
+--sans:Inter,Geist,-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--e:cubic-bezier(.2,.7,.2,1)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121211;--sf:#1a1a18;--ink:#efede6;--mut:#9a978c;--ln:#2d2c28;--ac:#7b9bff;--onac:#0d0d0c;--acs:rgba(123,155,255,.1);--gr:#4cb782;--grs:rgba(76,183,130,.1);--dg:#e5736b;--fd:#141412}}
+:root[data-theme=dark]{--bg:#121211;--sf:#1a1a18;--ink:#efede6;--mut:#9a978c;--ln:#2d2c28;--ac:#7b9bff;--onac:#0d0d0c;--acs:rgba(123,155,255,.1);--gr:#4cb782;--grs:rgba(76,183,130,.1);--dg:#e5736b;--fd:#141412}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased;display:flex;justify-content:center;min-height:100dvh;padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.num,input,.fig{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.app{width:100%;max-width:480px;animation:fade .5s var(--e)}@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+header{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--ln)}
+.brand{display:flex;align-items:center;gap:12px}.brand img{width:44px;height:44px}
+h1{margin:0;font:600 24px/1.1 var(--serif);letter-spacing:-.01em}.brand span{font-size:12px;color:var(--mut)}
+button{font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.ghost{background:none;border:1px solid var(--ln);color:var(--mut);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;transition:.15s}.ghost:hover{color:var(--ink);border-color:var(--mut)}
+.hist{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px}.hist:empty{display:none}
+.chip{flex:none;border:1px solid var(--ln);background:none;color:var(--mut);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.chip i{font-style:normal;margin-left:8px;opacity:.6}.chip.new{border-style:dashed}
+label,.lb{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:16px 0 6px}
+input,select{width:100%;min-height:46px;padding:10px 12px;font:16px var(--sans);color:var(--ink);background:var(--sf);border:1px solid var(--ln);border-radius:4px;outline:0;appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acs)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2377756c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.seg{display:flex;border:1px solid var(--ink);border-radius:4px;overflow:hidden;margin-top:12px}
+.seg button{flex:1;border:0;background:none;color:var(--ink);padding:10px;font-size:14px;font-weight:600;transition:.2s}.seg button.on{background:var(--ink);color:var(--bg)}
+.hero{background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:14px 16px 12px;margin-top:16px}
+.hero .top{display:flex;justify-content:space-between;align-items:center;gap:12px}.hero label{margin:0}.hero select{width:auto;min-height:32px;padding:4px 28px 4px 8px;font-size:13px}
+.hero input{border:0;padding:6px 0;min-height:0;font:600 40px/1.2 var(--serif);letter-spacing:-.02em;background:none;box-shadow:none!important}
+.hero small{color:var(--mut);font-size:12px}
+.hint{font-size:12px;color:var(--mut);margin:6px 0 0}.ladder{font-size:12px;color:var(--mut);margin:14px 0}
+.pri{width:100%;min-height:48px;border:0;border-radius:4px;background:var(--ac);color:var(--onac);font-size:15px;font-weight:600;transition:.15s}.pri:hover{filter:brightness(1.08)}.pri:active{transform:scale(.99)}
+.sec{min-height:44px;border:1px solid var(--ink);background:none;color:var(--ink);border-radius:4px;font-size:13px;font-weight:600;padding:0 14px;transition:.15s}.sec:hover{background:var(--ink);color:var(--bg)}
+.err{margin-top:12px;color:var(--dg);border-left:2px solid var(--dg);padding:4px 10px;font-size:13px}
+.trk{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:28px 0 8px}.trk i{height:3px;border-radius:2px;background:var(--ln);transition:background .3s}.trk i.u{background:var(--gr)}
+.steps{list-style:none;margin:0;padding:0}.step{border-top:1px solid var(--ln)}
+.sh{width:100%;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:14px 0;background:none;border:0;color:var(--ink);text-align:left}
+.sh b{width:26px;height:26px;border:1px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 12px var(--serif)}
+.step.used .sh b{background:var(--gr);border-color:var(--gr);color:#fff}
+.sh span{font-size:14px;font-weight:600}.sh small{display:block;font-weight:400;font-size:12px;color:var(--mut)}
+.sh em{font:600 20px var(--serif);font-style:normal;letter-spacing:-.01em;font-variant-numeric:tabular-nums}.step:not(.open) .sh em{font-size:17px;color:var(--mut)}
+.sb{padding:0 0 18px 40px;animation:fade .3s var(--e)}
+.say{margin:0;padding:12px 14px;background:var(--sf);border:1px solid var(--ln);border-left:3px solid var(--ac);border-radius:0 4px 4px 0;font:16px/1.55 var(--serif)}
+.tip{font-size:12px;color:var(--mut);margin:10px 0 12px}.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.acts .pri{min-height:44px;font-size:13px}
+.panel{background:var(--sf);border:1px solid var(--ln);border-radius:6px;padding:4px 16px 16px;margin-top:16px}
+.panel h3,.log h3{font:600 15px var(--serif);margin:14px 0 4px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--ln);font-size:13px;color:var(--mut)}.kv:last-of-type{border:0}.kv b{color:var(--ink);font-size:15px}
+.bar{height:4px;background:var(--ln);border-radius:2px;overflow:hidden;margin:2px 0 6px}.bar div{height:100%;background:var(--ac);transition:width .5s var(--e)}
+.rec{font-size:13px;background:var(--grs);border-left:2px solid var(--gr);padding:10px 12px;margin-top:8px;border-radius:0 4px 4px 0}
+.spark{width:100%;height:44px;margin-top:10px;display:block}
+.done{margin-top:16px;border:1px solid var(--gr);background:var(--grs);border-radius:6px;padding:16px}.done h3{margin:0 0 4px;font:600 18px var(--serif)}.done p{margin:0 0 12px;font-size:13px;color:var(--mut)}
+.log{margin-top:16px}.lrow{display:grid;grid-template-columns:1fr auto;gap:8px}.lrow .pri{width:auto;padding:0 20px}
+.log ul{list-style:none;margin:10px 0 0;padding:0}.log li{display:flex;justify-content:space-between;border-top:1px solid var(--ln);padding:8px 0;font-size:13px;color:var(--mut)}.log li b{color:var(--ink)}
+.empty{margin-top:10px;padding:14px;border:1px dashed var(--ln);border-radius:4px;text-align:center;color:var(--mut);font-size:13px}
+.exp{width:100%;margin-top:16px}.note{font-size:12px;color:var(--mut);margin-top:14px}
+details.how{margin-top:20px;border-top:1px solid var(--ln);padding-top:14px;font-size:13px;color:var(--mut)}details summary{cursor:pointer;font-weight:600;color:var(--ink)}details ol{padding-left:18px}details a,footer a{color:var(--ac)}
+footer{margin-top:20px;font-size:12px;color:var(--mut);text-align:center}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:18px;z-index:9;animation:fade .15s}
+.dlg{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:20px;max-width:340px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.35)}.dlg h3{margin:0 0 6px;font:600 17px var(--serif)}.dlg p{margin:0 0 16px;color:var(--mut);font-size:13px}.dlg div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dlg .pri{background:var(--dg);color:#fff}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div class="brand"><img src="icon.svg" alt=""><div><h1>Ackerman</h1><span>Negotiation planner</span></div></div>
+    <button class="ghost" id="themeBtn" type="button" onclick="cycleTheme()" aria-label="Change theme">Auto</button>
+  </header>
+  <div class="hist" id="hist"></div>
+
+  <label class="lb" for="scenario" style="margin-top:0">Scenario</label>
+  <select id="scenario" onchange="setScenario(this.value)"></select>
+  <div class="seg" role="group" aria-label="Your role"><button id="m-buyer" type="button" onclick="setMode('buyer')"></button><button id="m-seller" type="button" onclick="setMode('seller')"></button></div>
+
+  <div class="hero">
+    <div class="top"><label for="target">Your target</label>
+      <select id="currency" onchange="setCurrency(this.value)"><option value="USD">$ USD</option><option value="PHP">₱ PHP</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="JPY">¥ JPY</option><option value="INR">₹ INR</option><option value="CNY">¥ CNY</option><option value="AUD">A$ AUD</option></select></div>
+    <input type="number" id="target" placeholder="0" min="1" inputmode="decimal" oninput="fmt()">
+    <small id="fmt"></small>
+  </div>
+
+  <label for="item">What is it for?</label>
+  <input type="text" id="item">
+  <label for="concession">Final non-cash perk</label>
+  <input type="text" id="concession">
+  <p class="hint">Something cheap for you but valuable to them. It signals your money is spent while the deal keeps moving.</p>
+  <p class="ladder fig" id="ladder"></p>
+  <button class="pri" type="button" onclick="calculate()">Generate negotiation plan</button>
+  <div id="plan"></div>
+
+  <details class="how"><summary>How the Ackerman method works</summary>
+    <p>Four shrinking offers make every concession feel like a real sacrifice.</p>
+    <ol><li><b>65% anchor</b>: an extreme opening that resets expectations</li><li><b>85%</b>: a big move that shows flexibility</li><li><b>95%</b>: a smaller move, your budget is tightening</li><li><b>100% + perk</b>: your real number plus a non-cash extra</li></ol>
+    Sellers mirror it: 135%, 115%, 105%, 100%. Between offers, use calibrated questions like “How am I supposed to do that?” and let silence work.</details>
+  <footer>Method from <a href="https://www.amazon.com/Never-Split-Difference-Negotiating-Depended/dp/0062407805" target="_blank" rel="noopener">Chris Voss, <em>Never Split the Difference</em></a></footer>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}},del(k){try{localStorage.removeItem(k)}catch{}}};
+const K={s:"ackerman_sessions",a:"ackerman_active_session",t:"ackerman_theme"};
+const SC={
+  goods:{name:"Everyday purchase",lab:["I'm buying","I'm selling"],ref:"the {i}",ph:"used laptop, bike, sofa",perk:["pay today and make pickup easy","include a small bonus or faster delivery"]},
+  car:{name:"Car or big-ticket item",lab:["I'm buying","I'm selling"],ref:"the {i}",ph:"2018 Honda Civic",perk:["pay in full today with no financing delays","handle the paperwork and transfer quickly"]},
+  job:{name:"Job or salary",lab:["I'm hiring","My salary offer"],ref:"the {i} role",ph:"product designer",perk:["start next month and commit for a year","take on extra responsibility from day one"]},
+  free:{name:"Freelance project",lab:["I'm hiring","My rate"],ref:"the {i} project",ph:"website redesign",perk:["pay a deposit upfront and approve fast","deliver an extra round of revisions"]},
+  rent:{name:"Rent or lease",lab:["I'm renting","I'm leasing out"],ref:"the {i}",ph:"2-bedroom apartment",perk:["sign a longer lease and pay on time","include a flexible move-in date"]},
+  biz:{name:"Business deal",lab:["I'm the buyer","I'm the vendor"],ref:"the {i} deal",ph:"annual supply contract",perk:["commit to a longer term and pay upfront","give a referral and a testimonial"]}
+};
+const LAD={buyer:[["Anchor",.65],["Step up",.85],["Step up",.95],["Final + perk",1]],seller:[["Anchor",1.35],["Step down",1.15],["Step down",1.05],["Final + perk",1]]};
+const TIPS=["Say it, then stay silent. If they push back, ask: “How am I supposed to do that?”","Show movement, but make it feel costly. Mirror their last words as a question.","A smaller step. Let your tone say you are nearly out of room, and pause longer.","Add the perk and present it as the last thing you can give. An odd number reads as calculated."];
+const S={mode:"buyer",cur:"PHP",scn:"goods",offers:[],used:new Set(),counters:[],id:null,label:"",target:0,item:"",perk:"",open:null};
+const gid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const money=n=>{const m={USD:"en-US",PHP:"en-PH",EUR:"de-DE",GBP:"en-GB",JPY:"ja-JP",INR:"en-IN",CNY:"zh-CN",AUD:"en-AU"};return new Intl.NumberFormat(m[S.cur]||"en-US",{style:"currency",currency:S.cur,maximumFractionDigits:0}).format(n)};
+
+/* theme */
+function applyTheme(t){const r=document.documentElement;t==="auto"?r.removeAttribute("data-theme"):r.dataset.theme=t;$("themeBtn").textContent=t[0].toUpperCase()+t.slice(1)}
+function cycleTheme(){const o=["auto","light","dark"],n=o[(o.indexOf(ls.get(K.t,"auto"))+1)%3];ls.set(K.t,n);applyTheme(n)}
+
+/* sessions */
+function persist(){if(!S.id)return;const l=ls.get(K.s,[]),m={id:S.id,label:S.label||"Session",mode:S.mode,t:Date.now()},i=l.findIndex(x=>x.id===S.id);i>=0?l[i]=m:l.push(m);ls.set(K.s,l);
+  ls.set("ackerman_session_"+S.id,{mode:S.mode,currency:S.cur,scn:S.scn,offers:S.offers,usedSteps:[...S.used],counterOffers:S.counters,sessionLabel:S.label,sessionTarget:S.target,item:S.item,perk:S.perk});ls.set(K.a,S.id)}
+function load(id){const d=ls.get("ackerman_session_"+id,null);if(!d)return false;
+  Object.assign(S,{mode:d.mode||"buyer",cur:d.currency||"PHP",scn:d.scn||"goods",offers:d.offers||[],used:new Set(d.usedSteps||[]),counters:d.counterOffers||[],label:d.sessionLabel||"Session",target:d.sessionTarget||0,item:d.item||"",perk:d.perk||"",id,open:null});return true}
+function blank(){Object.assign(S,{mode:"buyer",offers:[],used:new Set(),counters:[],id:null,label:"",target:0,item:"",perk:"",open:null})}
+function sync(){$("currency").value=S.cur;$("scenario").value=S.scn;$("target").value=S.target||"";$("item").value=S.item;$("concession").value=S.perk;
+  const c=SC[S.scn];$("m-buyer").textContent=c.lab[0];$("m-seller").textContent=c.lab[1];
+  $("m-buyer").classList.toggle("on",S.mode==="buyer");$("m-seller").classList.toggle("on",S.mode==="seller");
+  $("item").placeholder="Example: "+c.ph;$("concession").placeholder="Example: "+c.perk[S.mode==="buyer"?0:1];
+  $("ladder").textContent=S.mode==="buyer"?"Ladder: 65% → 85% → 95% → 100%":"Ladder: 135% → 115% → 105% → 100%";fmt()}
+function hist(){const l=ls.get(K.s,[]);$("hist").innerHTML=l.map(s=>`<button class="chip${s.id===S.id?" on":""}" onclick="pick('${s.id}')">${esc(s.label)}<i onclick="event.stopPropagation();drop('${s.id}')" aria-label="Delete">×</i></button>`).join("")+(l.length?`<button class="chip new" onclick="fresh()">+ New</button>`:"")}
+function pick(id){if(id===S.id)return;persist();if(load(id)){sync();render();hist()}}
+function fresh(){persist();blank();sync();render();hist()}
+function drop(id){const l=ls.get(K.s,[]).filter(x=>x.id!==id);ls.del("ackerman_session_"+id);ls.set(K.s,l);if(id===S.id){l.length&&load(l[0].id)?0:blank();sync();render()}hist()}
+
+/* controls */
+function dialog(t,m,ok,fn){const o=document.createElement("div");o.className="ov";o.innerHTML=`<div class="dlg" role="dialog" aria-modal="true"><h3>${t}</h3><p>${m}</p><div><button class="sec" id="dn">Keep it</button><button class="pri" id="dy">${ok}</button></div></div>`;document.body.appendChild(o);$("dn").onclick=()=>o.remove();$("dy").onclick=()=>{o.remove();fn()}}
+function guard(fn,what){S.used.size||S.counters.length?dialog(`Switch ${what}?`,"You have marked steps or logged offers. Switching clears the current plan.","Switch anyway",fn):fn()}
+function setMode(m){if(m===S.mode)return;guard(()=>{S.mode=m;S.offers=[];S.used=new Set();S.counters=[];sync();render();persist()},"role")}
+function setScenario(v){const f=()=>{S.scn=v;S.offers=[];S.used=new Set();S.counters=[];sync();render();persist()};S.used.size||S.counters.length?(dialog("Change scenario?","Switching clears the current plan.","Switch anyway",f),$("scenario").value=S.scn):f()}
+function setCurrency(c){S.cur=c;fmt();S.offers.length&&render();persist()}
+function fmt(){const v=+$("target").value||0;$("fmt").textContent=v?money(v):"Enter the number you would be happy with"}
+
+/* maths */
+function precise(a,fin){const r=fin?.0035:.005,d=S.mode==="buyer"?-1:1;let v=Math.max(1,Math.round(a+a*Math.random()*r*d));v=Math.floor(v/10)*10+[3,7,9][Math.floor(Math.random()*3)];
+  if(S.mode==="buyer"&&fin&&v>a)v-=10;if(S.mode==="seller"&&fin&&v<a)v+=10;return Math.max(1,v)}
+function script(i,a,item,perk){const p=money(a),c=SC[S.scn],ref=c.ref.replace("{i}",item.toLowerCase()),k=perk.toLowerCase();
+  return S.mode==="buyer"?[`I really like ${ref}, but based on my budget I can make ${p} work.`,`I understand your number. How am I supposed to close that gap with the budget I have? I can stretch to ${p}.`,`You've been fair with me, and I appreciate it. This is very close to my absolute limit: ${p}.`,`I can do ${p}, and I can also ${k}. That is the strongest complete offer I can make.`][i]
+  :[`Given the value of ${ref}, I am asking ${p}.`,`I hear where you are coming from. I can adjust to ${p} if we can keep this moving.`,`I want to make this work, but this is very close to my floor: ${p}.`,`I can settle at ${p}, and I will ${k}. That is the strongest complete deal I can offer.`][i]}
+function calculate(){const t=+$("target").value;if(!(t>0)){$("plan").innerHTML=`<p class="err" role="alert">Enter a target price above 0 to build your plan.</p>`;return}
+  const item=$("item").value.trim()||"item",c=SC[S.scn];S.perk=$("concession").value.trim()||c.perk[S.mode==="buyer"?0:1];S.item=$("item").value.trim();
+  S.target=t;S.label=S.item||c.name;S.used=new Set();S.counters=[];S.open=null;
+  S.offers=LAD[S.mode].map(([label,p],i)=>{const a=precise(t*p,i===3);return{label,percent:p,amount:a,script:script(i,a,item,S.perk)}});
+  if(!S.id)S.id=gid();persist();hist();render()}
+function gap(){if(!S.counters.length)return null;const l=S.counters.at(-1),g=Math.abs(S.target-l)/S.target*100;return{g,l,hit:g<1}}
+function winP(){const a=gap();if(!a)return 50;return a.hit?95:a.g<=5?80:a.g<=10?70:a.g<=20?60:a.g<=50?50:Math.max(10,Math.round(50-(a.g-50)/10))}
+function rec(){const a=gap();if(!a)return"";const n=Math.max(...S.used,-1)+1;
+  return a.hit?"Target reached. Accept, or use your final offer to secure the perk.":a.g>50?"The gap is still large. Keep to your ladder.":a.g>20?(n<3?`Move to offer ${n+1} (${S.offers[n]?.label}). They are showing willingness.`:"Prepare your final offer with the perk."):a.g>5?"You are near your target. Consider your final offer.":"Very close. Make your next offer final."}
+function spark(v){if(v.length<2)return"";const w=300,h=44,p=4,mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1,pt=v.map((y,i)=>[p+i/(v.length-1)*(w-2*p),p+(1-(y-mn)/r)*(h-2*p)]);
+  const col=v.at(-1)<v[0]?"var(--gr)":"var(--dg)";return`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Their offer trend"><polyline points="${pt.map(q=>q.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pt.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="${col}"/>`).join("")}</svg>`}
+
+/* render */
+function render(){const el=$("plan");if(!S.offers.length){el.innerHTML="";return}
+  const first=[0,1,2,3].find(i=>!S.used.has(i)),open=S.open??first??3,a=gap(),all=first===undefined;
+  const steps=S.offers.map((o,i)=>{const u=S.used.has(i),op=i===open;return`<li class="step${u?" used":""}${op?" open":""}"><button class="sh" type="button" aria-expanded="${op}" onclick="S.open=${i};render()"><b>${u?"✓":i+1}</b><span>${o.label}<small>${Math.round(o.percent*100)}% of target</small></span><em>${money(o.amount)}</em></button>${op?`<div class="sb"><p class="say">${esc(o.script)}</p><p class="tip">${TIPS[i]}</p><div class="acts"><button class="sec" id="cp${i}" type="button" onclick="copyScript(${i})">Copy script</button><button class="${u?"sec":"pri"}" type="button" onclick="toggle(${i})">${u?"Undo":"Mark as said"}</button></div></div>`:""}</li>`}).join("");
+  el.innerHTML=`<div class="trk">${S.offers.map((_,i)=>`<i class="${S.used.has(i)?"u":""}"></i>`).join("")}</div><ol class="steps">${steps}</ol>
+  ${all?`<section class="done"><h3>${a&&a.hit?"Deal reached":"Ladder complete"}</h3><p>${a&&a.hit?"They met your target.":"You have used all four offers."} Your final offer was ${money(S.offers[3].amount)}.</p><button class="sec" type="button" onclick="fresh()">Start a new negotiation</button></section>`:""}
+  ${a?`<section class="panel"><h3>Where you stand</h3><div class="kv">Gap to target<b class="num">${a.g.toFixed(1)}%</b></div><div class="bar"><div style="width:${Math.min(100,Math.max(0,100-a.g))}%"></div></div><div class="kv">Latest offer<b class="num">${money(a.l)}</b></div><div class="kv">Rough win odds<b class="num">${winP()}%</b></div><div class="rec">${rec()}</div>${spark(S.counters)}</section>`:""}
+  <section class="log"><h3>Their offers</h3><div class="lrow"><input type="number" id="co" placeholder="Their latest number" min="1" inputmode="decimal" aria-label="Counterparty offer" onkeydown="event.key==='Enter'&&logOffer()"><button class="pri" type="button" onclick="logOffer()">Log</button></div>
+  ${S.counters.length?`<ul>${S.counters.map((v,i)=>{const d=i?v-S.counters[i-1]:0;return`<li><span>${i+1}. <b class="num">${money(v)}</b></span><span class="num">${i?(d>0?"+":"")+money(d):"First offer"}</span></li>`}).join("")}</ul>`:`<div class="empty">No offers logged yet. Log each counter to see the gap close.</div>`}</section>
+  <button class="sec exp" id="exp" type="button" onclick="copyPlan()">Copy full plan</button>
+  <p class="note">Use the scripts as honest framing, never a fake budget or backstory. Odds are a rule of thumb, not a prediction. Pause after each offer.</p>`}
+
+function toggle(i){S.used.has(i)?S.used.delete(i):(S.used.add(i),navigator.vibrate&&navigator.vibrate(30));S.open=null;persist();render()}
+function logOffer(){const i=$("co"),v=Math.round(+i.value);if(!(v>0)){i.focus();return}S.counters.push(v);persist();render()}
+async function clip(t,btn,done,idle){try{await navigator.clipboard.writeText(t)}catch{prompt("Copy this:",t);return}const b=$(btn);if(b){b.textContent=done;setTimeout(()=>{b.textContent=idle},1500)}}
+function copyScript(i){clip(S.offers[i].script,"cp"+i,"Copied ✓","Copy script")}
+function copyPlan(){const t=[`Ackerman plan: ${S.label}`,`Scenario: ${SC[S.scn].name} (${SC[S.scn].lab[S.mode==="buyer"?0:1]})`,`Target: ${money(S.target)}`,"",...S.offers.map((o,i)=>`Offer ${i+1}, ${o.label} (${Math.round(o.percent*100)}%): ${money(o.amount)}\n"${o.script}"`),"",S.counters.length?"Their offers: "+S.counters.map(money).join(" → "):"No counter-offers logged.","","Method: Chris Voss, Never Split the Difference"].join("\n");clip(t,"exp","Copied ✓","Copy full plan")}
+
+/* init */
+$("scenario").innerHTML=Object.entries(SC).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+applyTheme(ls.get(K.t,"auto"));
+(function(){const l=ls.get(K.s,[]),a=ls.get(K.a,null);(a&&load(a))||(l.length&&load(l[0].id));sync();render();hist()})();
+if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+</script>
+</body>
+</html>
