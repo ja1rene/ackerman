@@ -10,13 +10,13 @@ A small web app that plans a price negotiation for you using the Ackerman model.
 
 | Set up a negotiation | Your four offers | Track their counter-offers |
 | --- | --- | --- |
-| ![Setup screen in light mode](screenshots/1-setup.png) | ![Offers and scripts in light mode](screenshots/2-offers-light.png) | ![Gap tracking in light mode](screenshots/3-tracking-light.png) |
+| ![Setup screen in light mode](1-setup.png) | ![Offers and scripts in light mode](2-offers-light.png) | ![Gap tracking in light mode](3-tracking-light.png) |
 
 **Dark mode**
 
 | Your four offers | Track their counter-offers |
 | --- | --- |
-| ![Offers and scripts in dark mode](screenshots/2-offers-dark.png) | ![Gap tracking in dark mode](screenshots/3-tracking-dark.png) |
+| ![Offers and scripts in dark mode](2-offers-dark.png) | ![Gap tracking in dark mode](3-tracking-dark.png) |
 
 The theme follows your device by default. The button in the top right switches between Auto, Light and Dark.
 
