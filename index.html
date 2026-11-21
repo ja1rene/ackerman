@@ -12,6 +12,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{--bg:#f6f5f1;--sf:#fff;--ink:#1b1b18;--mut:#77756c;--ln:#e3e0d6;--ac:#1f4fd8;--onac:#fff;--acs:rgba(31,79,216,.08);--gr:#1f7a4d;--grs:rgba(31,122,77,.09);--dg:#b3382f;--fd:#faf9f6;
 --sans:Inter,Geist,-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--e:cubic-bezier(.2,.7,.2,1)}
@@ -170,7 +172,7 @@ function winP(){const a=gap();if(!a)return 50;return a.hit?95:a.g<=5?80:a.g<=10?
 function rec(){const a=gap();if(!a)return"";const n=Math.max(...S.used,-1)+1;
   return a.hit?"Target reached. Accept, or use your final offer to secure the perk.":a.g>50?"The gap is still large. Keep to your ladder.":a.g>20?(n<3?`Move to offer ${n+1} (${S.offers[n]?.label}). They are showing willingness.`:"Prepare your final offer with the perk."):a.g>5?"You are near your target. Consider your final offer.":"Very close. Make your next offer final."}
 function spark(v){if(v.length<2)return"";const w=300,h=44,p=4,mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1,pt=v.map((y,i)=>[p+i/(v.length-1)*(w-2*p),p+(1-(y-mn)/r)*(h-2*p)]);
-  const col=v.at(-1)<v[0]?"var(--gr)":"var(--dg)";return`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Their offer trend"><polyline points="${pt.map(q=>q.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pt.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="${col}"/>`).join("")}</svg>`}
+  const col=Math.abs(v.at(-1)-S.target)<Math.abs(v[0]-S.target)?"var(--gr)":"var(--dg)";return`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Their offer trend"><polyline points="${pt.map(q=>q.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pt.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3" fill="${col}"/>`).join("")}</svg>`}
 
 /* render */
 function render(){const el=$("plan");if(!S.offers.length){el.innerHTML="";return}
